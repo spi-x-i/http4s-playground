@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package greet;
+option go_package="/greetpb";
+
+message Addends {
+    int32 sum1 = 1;
+    int32 sum2 = 2;
+}
+
+message SumRequest {
+    Addends addends = 1;
+}
+
+message SumResponse {
+    int32 result = 1;
+}
+
+service SumService {
+    // Unary
+    rpc Sum(SumRequest) returns (SumResponse) {};
+}
