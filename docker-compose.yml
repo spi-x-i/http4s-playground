@@ -1,0 +1,28 @@
+version: '3.4'
+
+services:
+  http4s-playground:
+    image: ${image_name}:${project_version}<localBuild>
+    restart: always
+    environment:
+      HTTP_PORT: 9000
+      DB_URL: jdbc:postgresql://postgres:5432/http4s
+    ports:
+      - 9000:9000
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:9.6.21
+    restart: always
+    environment:
+      POSTGRES_DB: http4s
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - 5432:5432
+
+  adminer:
+    image: adminer
+    ports:
+      - 8080:8080
