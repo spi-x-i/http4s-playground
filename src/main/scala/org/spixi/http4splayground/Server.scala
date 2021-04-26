@@ -1,6 +1,6 @@
 package org.spixi.http4splayground
 
-import cats.effect.{ConcurrentEffect, ContextShift, Timer}
+import cats.effect.{Blocker, ConcurrentEffect, ContextShift, Timer}
 import cats.implicits._
 import doobie.util.ExecutionContexts
 import fs2.Stream
@@ -12,7 +12,8 @@ import org.http4s.server.middleware.{Logger => MLogger}
 import org.slf4j.{Logger, LoggerFactory}
 import org.spixi.http4splayground.clients.SumClient
 import org.spixi.http4splayground.config.{DatabaseConfig, Http4sPlaygroundConfig}
-import org.spixi.http4splayground.services.CalculatorService
+import org.spixi.http4splayground.dao.UserDAO
+import org.spixi.http4splayground.services.{CalculatorService, UserService}
 
 import scala.concurrent.duration._
 
@@ -27,32 +28,37 @@ object Server {
       // execution contexts
       serverEc <- Stream.resource(ExecutionContexts.cachedThreadPool[F])
       clientEc <- Stream.resource(ExecutionContexts.cachedThreadPool[F])
-      // connEc <- Stream.resource(ExecutionContexts.fixedThreadPool[F](conf.database.connections.poolSize))
-      // txnEc <- Stream.resource(ExecutionContexts.cachedThreadPool[F])
+      connEc   <- Stream.resource(ExecutionContexts.fixedThreadPool[F](conf.database.connections.poolSize))
+      txnEc    <- Stream.resource(ExecutionContexts.cachedThreadPool[F])
       // clients
       _ <- BlazeClientBuilder[F](clientEc).stream
       sumClient = SumClient.impl[F]
 
+      // repositories
+      xa <- Stream.resource(DatabaseConfig.dbTransactor(conf.database, connEc, Blocker.liftExecutionContext(txnEc)))
+      usersDaoImpl = UserDAO.impl[F](xa)
       // services
-      sumSerivceImpl = CalculatorService.impl[F](sumClient)
+      sumSerivceImpl  = CalculatorService.impl[F](sumClient)
+      userServiceImpl = UserService.impl[F](usersDaoImpl)
       // Combine Service Routes into an HttpApp.
       // Can also be done via a Router if you
       // want to extract a segments not checked
       // in the underlying routes.
       httpApp = (
-        Routes.sumControllerRoutes[F](sumSerivceImpl)
+        Routes.sumControllerRoutes[F](sumSerivceImpl) <+>
+          Routes.userControllerRoutes[F](userServiceImpl)
       ).orNotFound
 
       // With Middlewares in place
       finalHttpApp = MLogger.httpApp(logHeaders = true, logBody = true)(httpApp)
       migrationF   = DatabaseConfig.initializeDb(conf.database, conf.flyway)
       _ <- Stream
-        .retry(migrationF, 1.second, nextDelay = _ * 2, 5)
+        .retry(migrationF, 5.second, nextDelay = _ => 1.second, 5)
         .handleError { e => log.error(s"Failed to provide migration init.", e); () }
       exitCode <- BlazeServerBuilder[F](serverEc)
         .bindHttp(conf.server.port, conf.server.host)
         .withHttpApp(finalHttpApp)
-        .stream
+        .serve
     } yield exitCode
   }.drain
 }
