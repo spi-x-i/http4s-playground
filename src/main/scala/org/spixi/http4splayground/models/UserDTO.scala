@@ -1,6 +1,6 @@
 package org.spixi.http4splayground.models
 
-import cats.{Applicative, Monad}
+import cats.Applicative
 import cats.effect.Sync
 import cats.implicits._
 import io.circe.generic.semiauto._
@@ -47,7 +47,7 @@ object UserOutputDTO {
   implicit def userOutEntityDecoder[F[_]: Sync]: EntityDecoder[F, UserOutputDTO]        = jsonOf
 
   @throws[IllegalStateException]
-  def fromUser[F[_]](user: UserTable)(implicit M: Monad[F]): F[UserOutputDTO] =
+  def fromUser[F[_]: Applicative](user: UserTable): F[UserOutputDTO] =
     UserOutputDTO(
       uuid = user.uuid.getOrElse(throw new IllegalStateException(s"Without uuid cannot create user.")),
       cf = user.cf,

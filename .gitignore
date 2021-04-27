@@ -23,3 +23,9 @@ project/plugins/project/
 .bsp
 *.iml
 
+# VSCode + Metals
+.vscode/
+.metals/
+.bloop/
+.ammonite/
+metals.sbt
