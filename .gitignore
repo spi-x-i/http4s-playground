@@ -24,6 +24,9 @@ project/plugins/project/
 *.iml
 .gradle
 
+# Embedded postgres
+epg-temp-data/*
+
 # VSCode + Metals
 .vscode/
 .metals/

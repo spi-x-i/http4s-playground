@@ -12,6 +12,19 @@ val SubsVersion            = "20.2.0"
 val DoobieVersion          = "0.13.0"
 val FlywayVersion          = "5.2.4"
 val MockitoVersion         = "1.16.3"
+val PgEmbeddedVersion      = "1.2.10"
+
+val postgresV = "10.11.0"
+val osVersion =
+  System.getProperty("os.name").toLowerCase match {
+    case osName if osName.contains("mac") =>
+      "embedded-postgres-binaries-darwin-amd64"
+    case osName if osName.contains("win") =>
+      "embedded-postgres-binaries-windows-amd64"
+    case osName if osName.contains("linux") =>
+      "embedded-postgres-binaries-linux-amd64"
+    case osName => throw new RuntimeException(s"Unknown operating system $osName")
+  }
 
 val Dependencies = Seq(
   "org.http4s"        %% "http4s-blaze-server" % Http4sVersion,
@@ -27,11 +40,12 @@ val Dependencies = Seq(
   "org.tpolecat"      %% "doobie-hikari"       % DoobieVersion,
   "org.tpolecat"      %% "doobie-postgres"     % DoobieVersion,
   "org.flywaydb"       % "flyway-core"         % FlywayVersion,
-  "org.mockito"       %% "mockito-scala"       % MockitoVersion % Test,
-  "org.scalameta"     %% "munit"               % MunitVersion           % Test,
-  "org.typelevel"     %% "munit-cats-effect-2" % MunitCatsEffectVersion % Test,
+  "io.zonky.test"      % "embedded-postgres"   % PgEmbeddedVersion      % "it,test",
+  "org.mockito"       %% "mockito-scala"       % MockitoVersion         % "it,test",
+  "org.scalameta"     %% "munit"               % MunitVersion           % "it,test",
+  "org.typelevel"     %% "munit-cats-effect-2" % MunitCatsEffectVersion % "it,test",
   // Needed to build an in-memory server in the test
-  "io.higherkindness" %% "mu-rpc-testing" % "0.25.0" % Test
+  "io.higherkindness" %% "mu-rpc-testing" % "0.25.0" % "it,test"
 )
 
 lazy val macroSettings: Seq[Setting[_]] = Seq(
@@ -45,6 +59,12 @@ lazy val root = (project in file("."))
   .enablePlugins(SrcGenPlugin)
   .enablePlugins(JavaAppPackaging, BuildInfoPlugin)
   .enablePlugins(DockerPlugin, DockerComposePlugin)
+  .configs(IntegrationTest)
+  .settings(
+    // it settings
+    Defaults.itSettings,
+    inConfig(IntegrationTest.extend(Test))(org.scalafmt.sbt.ScalafmtPlugin.scalafmtConfigSettings)
+  )
   .settings(
     packageName in Docker := packageName.value,
     version in Docker := version.value,

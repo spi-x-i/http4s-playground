@@ -1,5 +1,6 @@
 package org.spixi.http4splayground.services
 
+import cats.Monad
 import cats.effect._
 import cats.implicits._
 import munit.CatsEffectSuite
@@ -27,7 +28,7 @@ class UserServiceSpec extends CatsEffectSuite with IdiomaticMockito {
   private val userDAO = new UserDAO[IO] {
     override def create(user: UserTable): IO[UserTable] = IO.pure(user.copy(id = 1L.some, uuid = uuid.some))
   }
-  private val serviceMock = UserService.impl(userDAO)(log, timerStub)
+  private val serviceMock = UserService.impl(userDAO)(log, timerStub, implicitly[Monad[IO]])
 
   test("create a user correctly") {
     val probe = UserInputDTO("CF", "spixi", "test", 32)
