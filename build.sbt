@@ -14,18 +14,6 @@ val FlywayVersion          = "5.2.4"
 val MockitoVersion         = "1.16.3"
 val PgEmbeddedVersion      = "1.2.10"
 
-val postgresV = "10.11.0"
-val osVersion =
-  System.getProperty("os.name").toLowerCase match {
-    case osName if osName.contains("mac") =>
-      "embedded-postgres-binaries-darwin-amd64"
-    case osName if osName.contains("win") =>
-      "embedded-postgres-binaries-windows-amd64"
-    case osName if osName.contains("linux") =>
-      "embedded-postgres-binaries-linux-amd64"
-    case osName => throw new RuntimeException(s"Unknown operating system $osName")
-  }
-
 val Dependencies = Seq(
   "org.http4s"        %% "http4s-blaze-server" % Http4sVersion,
   "org.http4s"        %% "http4s-blaze-client" % Http4sVersion,
