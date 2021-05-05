@@ -22,6 +22,10 @@ project/plugins/project/
 .idea
 .bsp
 *.iml
+.gradle
+
+# Embedded postgres
+epg-temp-data/*
 
 # VSCode + Metals
 .vscode/

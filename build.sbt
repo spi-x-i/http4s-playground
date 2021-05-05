@@ -11,6 +11,8 @@ val HigherKindnessV        = "0.25.0"
 val SubsVersion            = "20.2.0"
 val DoobieVersion          = "0.13.0"
 val FlywayVersion          = "5.2.4"
+val MockitoVersion         = "1.16.3"
+val PgEmbeddedVersion      = "1.2.10"
 
 val Dependencies = Seq(
   "org.http4s"        %% "http4s-blaze-server" % Http4sVersion,
@@ -26,10 +28,12 @@ val Dependencies = Seq(
   "org.tpolecat"      %% "doobie-hikari"       % DoobieVersion,
   "org.tpolecat"      %% "doobie-postgres"     % DoobieVersion,
   "org.flywaydb"       % "flyway-core"         % FlywayVersion,
-  "org.scalameta"     %% "munit"               % MunitVersion           % Test,
-  "org.typelevel"     %% "munit-cats-effect-2" % MunitCatsEffectVersion % Test,
+  "io.zonky.test"      % "embedded-postgres"   % PgEmbeddedVersion      % "it,test",
+  "org.mockito"       %% "mockito-scala"       % MockitoVersion         % "it,test",
+  "org.scalameta"     %% "munit"               % MunitVersion           % "it,test",
+  "org.typelevel"     %% "munit-cats-effect-2" % MunitCatsEffectVersion % "it,test",
   // Needed to build an in-memory server in the test
-  "io.higherkindness" %% "mu-rpc-testing" % "0.25.0" % Test
+  "io.higherkindness" %% "mu-rpc-testing" % "0.25.0" % "it,test"
 )
 
 lazy val macroSettings: Seq[Setting[_]] = Seq(
@@ -43,6 +47,12 @@ lazy val root = (project in file("."))
   .enablePlugins(SrcGenPlugin)
   .enablePlugins(JavaAppPackaging, BuildInfoPlugin)
   .enablePlugins(DockerPlugin, DockerComposePlugin)
+  .configs(IntegrationTest)
+  .settings(
+    // it settings
+    Defaults.itSettings,
+    inConfig(IntegrationTest.extend(Test))(org.scalafmt.sbt.ScalafmtPlugin.scalafmtConfigSettings)
+  )
   .settings(
     packageName in Docker := packageName.value,
     version in Docker := version.value,
@@ -99,6 +109,6 @@ lazy val root = (project in file("."))
     scalafmtOnCompile := true,
     libraryDependencies ++= Dependencies,
     addCompilerPlugin("org.typelevel" % "kind-projector"     % "0.11.3" cross CrossVersion.full),
-    addCompilerPlugin("com.olegpy"    %% "better-monadic-for" % "0.3.1"),
+    addCompilerPlugin("com.olegpy"   %% "better-monadic-for" % "0.3.1"),
     testFrameworks += new TestFramework("munit.Framework")
   )
